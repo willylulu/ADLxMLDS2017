@@ -2,13 +2,17 @@ import os
 import numpy as np
 import keras
 from keras.models import load_model
+import math
 
 model = load_model('mfcc_model.h5')
+model.summary()
 
+print("load test.ark")
 mfcc_test_rawData = open("../../data/mfcc/test.ark","r").read().splitlines()
 mfcc_test_data = np.zeros((len(mfcc_test_rawData),39))
 mfcc_test_data_index = {}
 
+print("Make mfcc_test_data matrix")
 for i in range(0,len(mfcc_test_rawData)):
     tempStr = mfcc_test_rawData[i]
     tempX = tempStr.split( )
@@ -16,26 +20,45 @@ for i in range(0,len(mfcc_test_rawData)):
         mfcc_test_data[i][j] = float(tempX[j+1])
     mfcc_test_data_index[tempX[0]] = i
 
+
+# map48_39_raw = open("../../data/48_39.map").read().splitlines()
+# map48_39 = {}
+# for x in map48_39_raw:
+#     tempX = x.split('\t')
+#     map48_39[tempX[0]] = tempX[1]
+
+print("load 48phone_char.map")
 phone_char48 = open("../../data/48phone_char.map").read().splitlines()
-numToChar = {}
-numToPhone = {}
 phoneToChar = {}
 for x in phone_char48:
     tempX = x.split('\t')
-    numToPhone[int(tempX[1])] = tempX[0]
-    numToChar[int(tempX[1])] = tempX[2]
     phoneToChar[tempX[0]] = tempX[2]
 
-map48_39_raw = open("../../data/48_39.map").read().splitlines()
-map48_39 = {}
-for x in map48_39_raw:
-    tempX = x.split('\t')
-    map48_39[tempX[0]] = tempX[1]
+print("load map39.npy")
+map39 = np.load("map39.npy").item()
+map39Inverse = {}
+for key, value in map39.items():
+    map39Inverse[value] = key
 
-result = model.predict_classes(mfcc_test_data, batch_size=8192, verbose=0)
+print("predict")
+
+timeStep = 123
+mfcc_test_data = np.resize(mfcc_test_data,(int(math.ceil(mfcc_test_data.shape[0]/timeStep)),timeStep,39))
+
+resultA = model.predict(mfcc_test_data, batch_size=128)
+resultA = np.resize(resultA,(len(mfcc_test_rawData),39))
+resultA = np.max(resultA, axis=1)
+print(resultA[0:100])
+
+result = model.predict_classes(mfcc_test_data, batch_size=128, verbose=0)
+result = np.resize(result,(len(mfcc_test_rawData)))
+
+print(resultA.shape)
+print(result.shape)
 
 mfcc_test_string = {}
 
+print("trim")
 for key, value in mfcc_test_data_index.items():
     temp = key.split("_")
     instance = temp[0] + "_" + temp[1]
@@ -43,8 +66,9 @@ for key, value in mfcc_test_data_index.items():
     if instance not in mfcc_test_string:
         mfcc_test_string[instance] = {}
     ans = result[mfcc_test_data_index[key]]
-    ans = numToPhone[ans]
-    ans = map48_39[ans]
+    ans = map39Inverse[ans]
+    if resultA[value] < 0.0:
+        ans = ""
     mfcc_test_string[instance][number-1] = ans
 
 for key, value in mfcc_test_string.items():
@@ -78,11 +102,45 @@ for key, value in mfcc_test_string.items():
             trim3 = trim3[0:i+1]
             break
     
+    trim4 = []
     for i in range(0,len(trim3)):
-        trim3[i] = phoneToChar[trim3[i]]
+        if trim3[i] != "":
+            trim4.append(phoneToChar[trim3[i]])
+
+    mfcc_test_string[key] = trim4
+
+print("trim again")
+for key, value in mfcc_test_string.items():
+    trim = value
+    
+    temp = None
+    trim2 = []
+
+    for x in trim:
+        if x == temp:
+            continue
+        else:
+            trim2.append(x)
+            temp = x
+
+    sil = False
+    trim3 = []
+    for x in trim2:
+        if sil == True:
+            trim3.append(x)
+        else:
+            if x != "sil":
+                trim3.append(x)
+                sil = True
+
+    for i in range(len(trim3)-1,-1,-1):
+        if trim3[i] != "sil":
+            trim3 = trim3[0:i+1]
+            break
 
     mfcc_test_string[key] = trim3
 
+print("make answer and save file")
 ansFile = open("ans.csv","w")
 ansFile.write("id,phone_sequence\n")
 

@@ -9,28 +9,17 @@ from sklearn.model_selection import train_test_split
 X_train = np.load("../../data/mfcc_x.dat")
 Y_train = np.load("../../data/y.dat")
 
-x_train, x_test, y_train, y_test = train_test_split(X_train, Y_train, train_size=0.9)
-
 phoneClass = 39
-z_train = np.zeros((y_train.shape[0], y_train.shape[1], 39))
-z_test = np.zeros((y_test.shape[0], y_test.shape[1], 39))
+z_train = np.zeros((Y_train.shape[0], Y_train.shape[1], 39))
 
-for i in range(0,len(y_train)):
-    for j in range(0, len(y_train[i])):
+for i in range(0,len(Y_train)):
+    for j in range(0, len(Y_train[i])):
         temp = np.zeros(phoneClass)
-        temp[int(y_train[i][j])] = 1.0
+        temp[int(Y_train[i][j])] = 1.0
         z_train[i][j] = temp
 
-for i in range(0,len(y_test)):
-    for j in range(0, len(y_test[i])):
-        temp = np.zeros(phoneClass)
-        temp[int(y_test[i][j])] = 1.0
-        z_test[i][j] = temp
-
-print(x_train.shape)
+print(X_train.shape)
 print(z_train.shape)
-print(x_test.shape)
-print(z_test.shape)
 
 timeStep = 123
 data_dim = 39
@@ -79,12 +68,6 @@ model.compile(loss='categorical_crossentropy',
               optimizer='rmsprop',
               metrics=['accuracy'])
 
-model.fit(x_train, z_train,
-          epochs=100,
-          batch_size=32,
-          validation_data=(x_test, z_test),
-          callbacks= [keras.callbacks.EarlyStopping(monitor='val_loss', patience=5, mode='auto')])
-score = model.evaluate(x_test, z_test, batch_size=32)
-print(score)
+model.fit(X_train, z_train,epochs=12,batch_size=32)
 
-model.save("mfcc_model_"+ str(score[1]) +".h5")
+model.save("mfcc_model_final.h5")
