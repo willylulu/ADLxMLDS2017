@@ -63,5 +63,5 @@ print(train_label[0])
 
 print("save files")
 np.save("map39",map39)
-mfcc_train_data.dump("../../data/mfcc_x.dat")
-train_label.dump("../../data/y.dat")
+mfcc_train_data.dump("../../data/mfcc_x.noy")
+train_label.dump("../../data/y.npy")

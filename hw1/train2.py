@@ -6,8 +6,8 @@ import keras.optimizers
 import numpy as np
 from sklearn.model_selection import train_test_split
 
-X_train = np.load("../../data/mfcc_x.dat")
-Y_train = np.load("../../data/y.dat")
+X_train = np.load("../../data/mfcc_x.npy")
+Y_train = np.load("../../data/y.npy")
 
 phoneClass = 39
 z_train = np.zeros((Y_train.shape[0], Y_train.shape[1], 39))
@@ -18,8 +18,6 @@ for i in range(0,len(Y_train)):
         temp[int(Y_train[i][j])] = 1.0
         z_train[i][j] = temp
 
-print(X_train.shape)
-print(z_train.shape)
 
 timeStep = 123
 data_dim = 39
@@ -41,6 +39,9 @@ model = Sequential()
 # model.add(Dropout(0.5))
 # model.add(Bidirectional(SimpleRNN(512, activation='tanh', return_sequences=True, use_bias=True, kernel_initializer='glorot_uniform', recurrent_initializer='orthogonal'), input_shape=(timeStep,data_dim)))
 model.add(Bidirectional(LSTM(512, activation='tanh', return_sequences=True, kernel_initializer= 'glorot_uniform', recurrent_initializer='orthogonal'), input_shape=(timeStep,data_dim)))
+model.add(Bidirectional(LSTM(512, activation='tanh', return_sequences=True, kernel_initializer= 'glorot_uniform', recurrent_initializer='orthogonal')))
+model.add(Dropout(0.5))
+model.add(Bidirectional(LSTM(512, activation='tanh', return_sequences=True, kernel_initializer= 'glorot_uniform', recurrent_initializer='orthogonal')))
 model.add(Bidirectional(LSTM(512, activation='tanh', return_sequences=True, kernel_initializer= 'glorot_uniform', recurrent_initializer='orthogonal')))
 model.add(Dropout(0.5))
 model.add(Bidirectional(LSTM(512, activation='tanh', return_sequences=True, kernel_initializer= 'glorot_uniform', recurrent_initializer='orthogonal')))

@@ -4,7 +4,7 @@ import keras
 from keras.models import load_model
 import math
 
-model = load_model('mfcc_model.h5')
+model = load_model('cnn_model.h5?dl=1%0D')
 model.summary()
 
 #print("load test.ark")
