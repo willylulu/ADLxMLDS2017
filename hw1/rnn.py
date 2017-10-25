@@ -169,7 +169,7 @@ for key, value in mfcc_test_string.items():
     mfcc_test_string[key] = trim3
 
 #print("make answer and save file")
-ansFile = open(sys.argv[2]+"/rnn.csv","w")
+ansFile = open(sys.argv[2]+"rnn.csv","w")
 ansFile.write("id,phone_sequence\n")
 
 for key, value in mfcc_test_string.items():
