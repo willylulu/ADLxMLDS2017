@@ -32,7 +32,7 @@ for i in range(0,len(train_label_rawData)):
         count = count + 1
 np.save("map39",map39)
 
-model = load_model('rnn_model.h5?dl=1%0D')
+model = load_model('rnn_model.h5')
 model.summary()
 
 #print("load test.ark")
@@ -56,7 +56,7 @@ for i in range(0,len(mfcc_test_rawData)):
 #     map48_39[tempX[0]] = tempX[1]
 
 #print("load 48phone_char.map")
-phone_char48 = open("../../data/48phone_char.map").read().splitlines()
+phone_char48 = open(sys.argv[1]+"48phone_char.map").read().splitlines()
 phoneToChar = {}
 for x in phone_char48:
     tempX = x.split('\t')

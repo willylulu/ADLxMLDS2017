@@ -1,14 +1,42 @@
 import os
+import sys
 import numpy as np
 import keras
 from keras.models import load_model
 import math
 
-model = load_model('cnn_model.h5?dl=1%0D')
+print("load train.lab")
+train_label_rawData = open(sys.argv[1]+"train.lab","r").read().splitlines()
+print(len(train_label_rawData))
+
+print("load 48_39.map")
+map48_39_raw = open(sys.argv[1]+"48_39.map").read().splitlines()
+map48_39 = {}
+for x in map48_39_raw:
+    tempX = x.split('\t')
+    map48_39[tempX[0]] = tempX[1]
+
+# mfcc_test_data = []
+# mfcc_test_data_index = {}
+
+map39 = {}
+count = 0
+
+print("transform phone to number")
+for i in range(0,len(train_label_rawData)):
+    tempStr = train_label_rawData[i]
+    tempX = tempStr.split(',')
+    label = map48_39[tempX[1]]
+    if label not in map39:
+        map39[label] = count
+        count = count + 1
+np.save("map39",map39)
+
+model = load_model('cnn_model.h5')
 model.summary()
 
 #print("load test.ark")
-mfcc_test_rawData = open("../../data/mfcc/test.ark","r").read().splitlines()
+mfcc_test_rawData = open(sys.argv[1]+"mfcc/test.ark","r").read().splitlines()
 mfcc_test_data = np.zeros((len(mfcc_test_rawData),39))
 mfcc_test_data_index = {}
 
@@ -28,7 +56,7 @@ for i in range(0,len(mfcc_test_rawData)):
 #     map48_39[tempX[0]] = tempX[1]
 
 #print("load 48phone_char.map")
-phone_char48 = open("../../data/48phone_char.map").read().splitlines()
+phone_char48 = open(sys.argv[1]+"48phone_char.map").read().splitlines()
 phoneToChar = {}
 for x in phone_char48:
     tempX = x.split('\t')
@@ -141,7 +169,7 @@ for key, value in mfcc_test_string.items():
     mfcc_test_string[key] = trim3
 
 #print("make answer and save file")
-ansFile = open("ans.csv","w")
+ansFile = open(sys.argv[2]+"ans.csv","w")
 ansFile.write("id,phone_sequence\n")
 
 for key, value in mfcc_test_string.items():
