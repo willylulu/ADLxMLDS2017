@@ -5,6 +5,7 @@ from keras.layers import recurrent
 import keras.optimizers
 import numpy as np
 from sklearn.model_selection import train_test_split
+from keras.models import load_model
 
 X_train = np.load("../../data/mfcc_x.npy")
 Y_train = np.load("../../data/y.npy")
@@ -22,7 +23,7 @@ for i in range(0,len(Y_train)):
 timeStep = 123
 data_dim = 39
 
-model = Sequential()
+model = load_model('temp_model.h5')
 # model.add(Conv1D(filters=256, kernel_size=3))
 # model.add(Conv1D(filters=256, kernel_size=3))
 # model.add(Conv1D(filters=256, kernel_size=3, activation= "relu"))
@@ -38,12 +39,15 @@ model = Sequential()
 # model.add(LeakyReLU())
 # model.add(Dropout(0.5))
 # model.add(Bidirectional(SimpleRNN(512, activation='tanh', return_sequences=True, use_bias=True, kernel_initializer='glorot_uniform', recurrent_initializer='orthogonal'), input_shape=(timeStep,data_dim)))
-model.add(Bidirectional(LSTM(512, activation='tanh', return_sequences=True, kernel_initializer= 'glorot_uniform', recurrent_initializer='orthogonal'), input_shape=(timeStep,data_dim)))
-model.add(Bidirectional(LSTM(512, activation='tanh', return_sequences=True, kernel_initializer= 'glorot_uniform', recurrent_initializer='orthogonal')))
-model.add(Dropout(0.5))
-model.add(Bidirectional(LSTM(512, activation='tanh', return_sequences=True, kernel_initializer= 'glorot_uniform', recurrent_initializer='orthogonal')))
-model.add(Bidirectional(LSTM(512, activation='tanh', return_sequences=True, kernel_initializer= 'glorot_uniform', recurrent_initializer='orthogonal')))
-model.add(Dropout(0.5))
+# model.add(Bidirectional(LSTM(512, activation='tanh', return_sequences=True, kernel_initializer= 'glorot_uniform', recurrent_initializer='orthogonal'), input_shape=(timeStep,data_dim)))
+# model.add(Bidirectional(LSTM(512, activation='tanh', return_sequences=True, kernel_initializer= 'glorot_uniform', recurrent_initializer='orthogonal')))
+# model.add(Dropout(0.5))
+# model.add(Bidirectional(LSTM(512, activation='tanh', return_sequences=True, kernel_initializer= 'glorot_uniform', recurrent_initializer='orthogonal')))
+# model.add(Bidirectional(LSTM(512, activation='tanh', return_sequences=True, kernel_initializer= 'glorot_uniform', recurrent_initializer='orthogonal')))
+# model.add(Dropout(0.5))
+# model.add(Bidirectional(LSTM(512, activation='tanh', return_sequences=True, kernel_initializer= 'glorot_uniform', recurrent_initializer='orthogonal')))
+# model.add(Bidirectional(LSTM(512, activation='tanh', return_sequences=True, kernel_initializer= 'glorot_uniform', recurrent_initializer='orthogonal')))
+# model.add(Dropout(0.5))
 # model.add(GRU(512, activation='relu', return_sequences=True))
 # model.add(GRU(512, activation='relu', return_sequences=True))
 # model.add(GRU(256, activation='tanh', return_sequences=True, recurrent_activation='hard_sigmoid', use_bias=True, kernel_initializer='glorot_uniform', recurrent_initializer='orthogonal'))
@@ -51,7 +55,7 @@ model.add(Dropout(0.5))
 # model.add(SimpleRNN(32, activation='relu', return_sequences=False, use_bias=True, kernel_initializer='glorot_uniform', recurrent_initializer='orthogonal'))
 # model.add(Dropout(0.5))  # returns a sequence of vectors of dimension 32  
 # model.add(Dense(256, activation='relu'))
-model.add(TimeDistributed(Dense(phoneClass, activation='softmax')))
+# model.add(TimeDistributed(Dense(phoneClass, activation='softmax')))
 # model.add(Reshape((timeStep,phoneClass), input_shape=(timeStep*data_dim,)))
 
 # model = Sequential()
@@ -63,9 +67,9 @@ model.add(TimeDistributed(Dense(phoneClass, activation='softmax')))
 
 model.summary()
 model.compile(loss='categorical_crossentropy',
-              optimizer='rmsprop',
+              optimizer=keras.optimizers.RMSprop(lr=0.0001),
               metrics=['accuracy'])
 
-model.fit(X_train, z_train,epochs=8,batch_size=32)
+model.fit(X_train, z_train,epochs=10,batch_size=32)
 
-model.save("temp_model.h5")
+model.save("mfcc_model_final.h5")

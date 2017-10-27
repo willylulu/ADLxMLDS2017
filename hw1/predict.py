@@ -3,6 +3,7 @@ import numpy as np
 import keras
 from keras.models import load_model
 import math
+import random
 
 model = load_model('mfcc_model.h5')
 model.summary()
@@ -67,7 +68,7 @@ for key, value in mfcc_test_data_index.items():
         mfcc_test_string[instance] = {}
     ans = result[mfcc_test_data_index[key]]
     ans = map39Inverse[ans]
-    if resultA[value] < 0.6:
+    if resultA[value] < 0.7:
         ans = ""
     mfcc_test_string[instance][number-1] = ans
 
@@ -141,7 +142,7 @@ for key, value in mfcc_test_string.items():
     mfcc_test_string[key] = trim3
 
 #print("make answer and save file")
-ansFile = open("ans.csv","w")
+ansFile = open("ans"+str(random.random())+".csv","w")
 ansFile.write("id,phone_sequence\n")
 
 for key, value in mfcc_test_string.items():
