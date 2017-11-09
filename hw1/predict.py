@@ -5,7 +5,7 @@ from keras.models import load_model
 import math
 import random
 
-model = load_model('mfcc_model.h5')
+model = load_model('mfcc_model_final.h5')
 model.summary()
 
 #print("load test.ark")
