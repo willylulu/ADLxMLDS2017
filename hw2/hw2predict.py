@@ -68,7 +68,7 @@ def getTestDataSets():
 unit = 512
 inputs = tf.placeholder(tf.float32,[None,80,4096])
 batch_size = tf.shape(inputs)[0]
-beam_width = 1
+beam_width = 3
 start_tokens = tf.fill([batch_size], encodeWords["<BOS>"])
 
 def lstm_cell():
