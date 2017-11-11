@@ -2,6 +2,7 @@ import os
 import numpy as np
 import json
 import string
+import sys
 from random import randint
 
 import tensorflow as tf
@@ -22,7 +23,7 @@ from tensorflow.python.util import nest
 from tensorflow.contrib.seq2seq.python.ops import attention_wrapper
 from tensorflow.contrib.seq2seq.python.ops import beam_search_decoder
 
-path = "../../data/MLDS_hw2_data/"
+path = sys.argv[1]
 
 testdir = "testing_data/feat/"
 
@@ -64,7 +65,7 @@ def getTestDataSets():
         i=i+1
     return x_data
 
-unit = 512
+unit = 256
 inputs = tf.placeholder(tf.float32,[None,80,4096])
 batch_size = tf.shape(inputs)[0]
 beam_width = 3
@@ -120,7 +121,7 @@ predict = sess.run([outputs], feed_dict={inputs: x_data})
 
 ans = [getStr(x) for x in predict[0]]
 
-f = open("answer.txt","w")
+f = open(sys.argv[2],"w")
 for i in range(0,len(ans)):
     f.write(videos[i]+","+ans[i]+"\n")
 f.close()
