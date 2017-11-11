@@ -1,2 +1,2 @@
-model_checkpoint_path: "model1900.ckpt"
-all_model_checkpoint_paths: "model1900.ckpt"
+model_checkpoint_path: "model0.ckpt"
+all_model_checkpoint_paths: "model0.ckpt"
