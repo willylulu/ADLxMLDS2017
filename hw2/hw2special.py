@@ -114,7 +114,7 @@ sess.run(tf.global_variables_initializer())
 
 saver = tf.train.Saver()
 
-saver.restore(sess, "../../model/0.21/model200.ckpt")
+saver.restore(sess, "model200.ckpt")
 
 x_data = getTestDataSets()
 predict = sess.run([outputs], feed_dict={inputs: x_data})
@@ -123,5 +123,7 @@ ans = [getStr(x) for x in predict[0]]
 
 f = open(sys.argv[2],"w")
 for i in range(0,len(ans)):
-    f.write(videos[i]+","+ans[i]+"\n")
+    name = videos[i]
+    if name == 'klteYv1Uv9A_27_33.avi' or name == '5YJaS2Eswg0_22_26.avi' or name == 'UbmZAe5u5FI_132_141.avi' or name=='JntMAcTlOF0_50_70.avi' or name=='tJHUH9tpqPg_113_118.avi':
+        f.write(videos[i]+","+ans[i]+"\n")
 f.close()
