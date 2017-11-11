@@ -4,7 +4,6 @@ import json
 import string
 from random import randint
 
-import keras
 import tensorflow as tf
 import tensorflow.contrib.seq2seq as seq2seq
 
@@ -59,12 +58,26 @@ print(maxlen)
 print(maxlenStr)
 
 encodeWords = {}
-counter = 1
+counter = 4
+# wordsFreq = {}
+# for x in words:
+#     if x not in wordsFreq:
+#         wordsFreq[x] = 1
+#     else:
+#         wordsFreq[x] = wordsFreq[x] + 1
+
+# for key, value in wordsFreq.items():
+#     if value>2:
+#         encodeWords[key] = counter
+#         counter = counter + 1 
 for x in words:
     if x not in encodeWords:
         encodeWords[x] = counter
-        counter = counter + 1
-encodeWords["<EOS>"] = 0
+        counter = counter + 1 
+encodeWords["<PAD>"] = 0      
+encodeWords["<BOS>"] = 1
+encodeWords["<EOS>"] = 2
+encodeWords["<NAN>"] = 3
 print(len(encodeWords))
 words = []
 
@@ -73,9 +86,16 @@ for key, value in encodeWords.items():
     decodeWords[value] = key
 print(len(decodeWords))
 
+max_seq_length = 20
+
+def getStr(ints):
+    sentence = ' '.join([decodeWords[int] for int in ints])
+    sentence = sentence.replace('<BOS> ','').replace(' <EOS>', '')
+    return sentence
+
 def getMiniDataSets():
     x_data = np.zeros((1450,80,4096),dtype="float32")
-    x_label = np.zeros((1450,40,1),dtype="float32")
+    x_label = np.zeros((1450,max_seq_length),dtype="int32")
     y_length = np.zeros((1450),dtype="int32")
 
     i = 0
@@ -92,82 +112,92 @@ def getMiniDataSets():
 
         x_data[i] = temp
 
-        y_length[i] = len(unicode.split(y," "))
-
         tempB = []
         y = ''.join(c for c in y if c not in string.punctuation)
+        
+        tempB.append(encodeWords["<BOS>"])
+        
         for z in unicode.split(y," "):
-            tempB.append(encodeWords[z.lower()])
+            if z in encodeWords:
+                tempB.append(encodeWords[z.lower()])
+         
+        tempB.append(encodeWords["<EOS>"])
 
-        y_length[i] = len(unicode.split(y," "))
+        y_length[i] = len(tempB)
 
-        for xa in range(len(tempB),40):
-            tempB.append(encodeWords["<EOS>"])
-        tempB = np.reshape(tempB,(40,1))
+        for xa in range(len(tempB),max_seq_length):
+            tempB.append(encodeWords["<PAD>"])
+            
+        if len(tempB) > max_seq_length:
+            y_length[i] = max_seq_length
+            tempB = tempB[:max_seq_length]
+            tempB[-1] = encodeWords["<EOS>"]
+            
+        tempB = np.reshape(tempB,(max_seq_length))
         x_label[i] = tempB
         i = i+1
-        
-    print(seqnum)
-
-    x_data = np.resize(x_data,(23,64,80,4096))
-    x_label = np.resize(x_label,(23,64,40))    
-    y_length = np.resize(y_length,(23,64))
+    x_data = np.split(x_data,29)
+    x_label = np.split(x_label,29)
+    y_length = np.split(y_length,29)
     return x_data, x_label, y_length
 
 #tensorflow   
 
+unit = 512
 inputs = tf.placeholder(tf.float32,[None,80,4096]) 
-labels = tf.placeholder(tf.int32,[None,40])
+labels = tf.placeholder(tf.int32,[None,max_seq_length])
 length = tf.placeholder(tf.int32,[None])
+batch_size = tf.shape(inputs)[0]
+sequence_length = tf.fill([batch_size], max_seq_length)
 
-sequence_length = [80 for _ in range(64)]
-
-encoder_cell = tf.nn.rnn_cell.LSTMCell(256)
+encoder_cell = tf.nn.rnn_cell.BasicLSTMCell(unit)
 
 encoder_outputs, encoder_state = tf.nn.dynamic_rnn(encoder_cell, inputs, dtype=tf.float32)
 print(encoder_outputs.get_shape())
 
-attention_mechanism = tf.contrib.seq2seq.LuongAttention(num_units=256, memory=encoder_outputs)
+attention_mechanism = tf.contrib.seq2seq.LuongAttention(num_units=unit, memory=encoder_outputs)
 
-decoder_cell = tf.contrib.rnn.BasicLSTMCell(256)
+decoder_cell = tf.contrib.rnn.BasicLSTMCell(unit)
 attention_cell = tf.contrib.seq2seq.AttentionWrapper(decoder_cell, attention_mechanism)
 
-initial_state = attention_cell.zero_state(dtype=tf.float32, batch_size=64)
-initial_state = initial_state.clone(cell_state=encoder_state)
+initial_state = attention_cell.zero_state(dtype=tf.float32, batch_size=batch_size)
+initial_state = initial_state.clone(cell_state=encoder_state) 
 
-projection_layer = Dense(6058)  
+embedding = tf.Variable(tf.random_uniform([len(encodeWords), unit], -0.1, 0.1, dtype=tf.float32))
+labels_embedded = tf.nn.embedding_lookup(embedding, labels)
 
-helper = tf.contrib.seq2seq.TrainingHelper(inputs=encoder_outputs, sequence_length=sequence_length)
-decoder = tf.contrib.seq2seq.BasicDecoder(decoder_cell, helper, encoder_state, output_layer=projection_layer)
-logits = tf.contrib.seq2seq.dynamic_decode(decoder,maximum_iterations=40)
+output_projection_layer = Dense(len(encodeWords), use_bias=False)
 
-logits = tf.nn.softmax(logits[0].rnn_output)
+#train
+helper = tf.contrib.seq2seq.TrainingHelper(labels_embedded, sequence_length)
+#helper = tf.contrib.seq2seq.ScheduledOutputTrainingHelper(labels_embedded, sequence_length,  0.5)
+decoder = tf.contrib.seq2seq.BasicDecoder(attention_cell, helper, initial_state, output_layer=output_projection_layer)
 
-masks = tf.cast(tf.sequence_mask(length, maxlen=40),tf.float32);
-loss = tf.contrib.seq2seq.sequence_loss(logits=logits, targets=labels, weights=masks)
+decoder_outputs, _, _ = tf.contrib.seq2seq.dynamic_decode(decoder, maximum_iterations=max_seq_length)
 
+outputs = decoder_outputs.rnn_output
+sample = decoder_outputs.sample_id
+
+masks = tf.cast(tf.sequence_mask(length, maxlen=max_seq_length),tf.float32);
+loss = tf.contrib.seq2seq.sequence_loss(logits=outputs, targets=labels, weights=masks,average_across_timesteps=False,average_across_batch=False)
+loss = tf.reduce_sum(loss)
 optimizer = tf.train.AdamOptimizer(learning_rate=0.001)
 minimize = optimizer.minimize(loss)
-    
-# #train_loss = (tf.reduce_sum(crossent * masks) / batch_size)
 
 
-# opt = tf.train.AdadeltaOptimizer(learning_rate=0.001).minimize(train_loss)
 
+trainCount = 0
+totalLoss = 0
 sess = tf.Session()
 sess.run(tf.global_variables_initializer())
-
 for j in range(200):
     x_data, x_label, y_length = getMiniDataSets()
-    
-    print("")
-    for i in range(23):
-        outs = sess.run([minimize, loss], feed_dict={inputs: x_data[i], labels: x_label[i], length: y_length[i]})
+    for i in range(29):
+        trainCount = trainCount + 1
         
-    print(outs[1])
-
-    prediction=tf.argmax(logits,-1)
-    best = sess.run([prediction],feed_dict={inputs: x_data[randint(0, 22)]})
-    best = np.reshape(best,(64,40))
-    ram = [randint(0, 63)]
-    print("{0} {1}".format( ram,best[ram]))
+        _,l,predict = sess.run([minimize, loss, sample], feed_dict={inputs: x_data[i], labels: x_label[i], length: y_length[i]})
+        
+        totalLoss += l
+    ran = randint(0,49)
+    print(getStr(predict[ran]))
+    print(totalLoss/trainCount)
