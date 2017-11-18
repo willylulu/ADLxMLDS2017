@@ -48,17 +48,25 @@ for x in trainjson:
             maxlenStr = y
         for z in ss:
             words.append(z.lower())
-encodeWords = {}
-counter = 4
-
+            
+wordsFreq = {}
 for x in words:
-    if x not in encodeWords:
-        encodeWords[x] = counter
-        counter = counter + 1 
+    if x not in wordsFreq:
+        wordsFreq[x] = 1
+    else:
+        wordsFreq[x] = wordsFreq[x] + 1
+            
+encodeWords = {}
+counter = 3       
+        
+for key,value in wordsFreq.items():
+    if value>2:
+        encodeWords[key] = counter
+        counter = counter + 1
 encodeWords["<PAD>"] = 0      
 encodeWords["<BOS>"] = 1
 encodeWords["<EOS>"] = 2
-encodeWords["<NAN>"] = 3
+encodeWords["something"] = 3
 print(len(encodeWords))
 
 decodeWords = {}
@@ -73,7 +81,7 @@ max_seq_length = 21
 
 def getStr(ints):
     sentence = ' '.join([decodeWords[int] for int in ints])
-    sentence = sentence.replace('<BOS> ','').replace(' <EOS>', '')
+    sentence = sentence.replace('<BOS> ','').replace(' <EOS>', '').replace('<PAD>', '')
     return sentence
 
 def getMiniDataSets():
@@ -99,10 +107,17 @@ def getMiniDataSets():
         x_label_train_temp = []
         
         y = ''.join(c for c in y if c not in string.punctuation)
-        temp = [encodeWords[x.lower()] for x in str.split(y," ")]
         
-        if(len(temp)>20):
-            temp = temp[:20]
+        temp = []
+        for x in str.split(y," "):
+            w = x.lower()
+            if wordsFreq[w]<4:
+                temp.append(encodeWords["something"])
+            else:
+                temp.append(encodeWords[w])
+        
+        if(len(temp)>(max_seq_length-1)):
+            temp = temp[:(max_seq_length-1)]
         
         x_label_temp = temp + [encodeWords["<EOS>"]]
         x_label_train_temp = [encodeWords["<BOS>"]] + temp 
@@ -138,26 +153,27 @@ labels_train = tf.placeholder(tf.int32,[None,max_seq_length])
 length = tf.placeholder(tf.int32,[None])
 length_train = tf.placeholder(tf.int32,[None])
 batch_size = tf.shape(inputs)[0]
+inputs_length = tf.fill([batch_size],80)
 sequence_length = tf.fill([batch_size], max_seq_length)
 
 def lstm_cell():
-  return tf.contrib.rnn.BasicLSTMCell(unit)
+  return tf.nn.rnn_cell.BasicLSTMCell(unit)
 
 encoder_cell = tf.contrib.rnn.MultiRNNCell([lstm_cell() for _ in range(2)])
 
-encoder_outputs, encoder_state = tf.nn.dynamic_rnn(encoder_cell, inputs, dtype=tf.float32)
-print(encoder_outputs.get_shape())
-
-attention_mechanism = tf.contrib.seq2seq.BahdanauAttention(num_units=unit, memory=encoder_outputs)
-
-decoder_cell = tf.contrib.rnn.MultiRNNCell([lstm_cell() for _ in range(2)])
-attention_cell = tf.contrib.seq2seq.AttentionWrapper(decoder_cell, attention_mechanism)
-
-initial_state = attention_cell.zero_state(dtype=tf.float32, batch_size=batch_size)
-initial_state = initial_state.clone(cell_state=encoder_state) 
+encoder_outputs, encoder_state = tf.nn.dynamic_rnn(encoder_cell, inputs, sequence_length=inputs_length, dtype=tf.float32)
 
 embedding = tf.Variable(tf.random_uniform([len(encodeWords), unit], -0.1, 0.1, dtype=tf.float32))
 labels_embedded = tf.nn.embedding_lookup(embedding, labels_train)
+
+attention_mechanism = tf.contrib.seq2seq.LuongAttention(num_units=unit, memory=encoder_outputs, memory_sequence_length=inputs_length)
+
+decoder_cell = tf.contrib.rnn.MultiRNNCell([lstm_cell() for _ in range(2)])
+
+attention_cell = tf.contrib.seq2seq.AttentionWrapper(decoder_cell, attention_mechanism, attention_layer_size=unit)
+
+initial_state = attention_cell.zero_state(dtype=tf.float32, batch_size=batch_size)
+initial_state = initial_state.clone(cell_state=encoder_state) 
 
 output_projection_layer = Dense(len(encodeWords), use_bias=False)
 
@@ -179,9 +195,13 @@ minimize = optimizer.minimize(loss)
 
 trainCount = 0
 totalLoss = 0
-sess = tf.Session()
+
+config = tf.ConfigProto()
+config.gpu_options.allow_growth = True
+sess = tf.Session(config=config)
 sess.run(tf.global_variables_initializer())
-for j in range(800):
+
+for j in range(1000):
     x_data, x_label, x_label_train, y_length, y_length_train = getMiniDataSets()
     for i in range(29):
         trainCount = trainCount + 1
@@ -199,6 +219,9 @@ for j in range(800):
     ran = randint(0,49)
     log = "%d %f %s"%(j, totalLoss/trainCount, getStr(predict[ran]))
     print(log)
-    if j%100==0:
+    if j%10==0 and j!=0:
         saver = tf.train.Saver()
         saver.save(sess, "model"+str(j)+".ckpt")
+        
+saver = tf.train.Saver()
+saver.save(sess, "model"+str(j)+".ckpt")

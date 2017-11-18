@@ -71,12 +71,21 @@ batch_size = tf.shape(inputs)[0]
 beam_width = 3
 start_tokens = tf.fill([batch_size], encodeWords["<BOS>"])
 
+labels = tf.placeholder(tf.int32,[None,max_seq_length])
+labels_train = tf.placeholder(tf.int32,[None,max_seq_length])
+length = tf.placeholder(tf.int32,[None])
+length_train = tf.placeholder(tf.int32,[None])
+inputs_length = tf.fill([batch_size],80)
+sequence_length = tf.fill([batch_size], max_seq_length)
+
 def lstm_cell():
-  return tf.contrib.rnn.BasicLSTMCell(unit)
+  return tf.nn.rnn_cell.BasicLSTMCell(unit)
 
 encoder_cell = tf.contrib.rnn.MultiRNNCell([lstm_cell() for _ in range(2)])
 
-encoder_outputs, encoder_state = tf.nn.dynamic_rnn(encoder_cell, inputs, dtype=tf.float32)
+encoder_outputs, encoder_state = tf.nn.dynamic_rnn(encoder_cell, inputs, sequence_length=inputs_length, dtype=tf.float32)
+
+embedding = tf.Variable(tf.random_uniform([len(encodeWords), unit], -0.1, 0.1, dtype=tf.float32))
 
 tiled_encoder_outputs = tf.contrib.seq2seq.tile_batch(encoder_outputs, beam_width)
 
@@ -86,16 +95,14 @@ tiled_sequence_length = tf.contrib.seq2seq.tile_batch(tf.fill([batch_size],80), 
 
 batch_size_beam = tf.shape(tiled_encoder_outputs)[0]
 
-attention_mechanism = tf.contrib.seq2seq.BahdanauAttention(num_units=unit, memory=tiled_encoder_outputs, memory_sequence_length = tiled_sequence_length)
+attention_mechanism = tf.contrib.seq2seq.LuongAttention(num_units=unit, memory=encoder_outputs, memory_sequence_length=inputs_length)
 
 decoder_cell = tf.contrib.rnn.MultiRNNCell([lstm_cell() for _ in range(2)])
 
-attention_cell = tf.contrib.seq2seq.AttentionWrapper(decoder_cell, attention_mechanism)
+attention_cell = tf.contrib.seq2seq.AttentionWrapper(decoder_cell, attention_mechanism, attention_layer_size=unit)
 
 initial_state = attention_cell.zero_state(dtype=tf.float32, batch_size=batch_size * beam_width)
 initial_state = initial_state.clone(cell_state=tiled_encoder_state) 
-
-embedding = tf.Variable(tf.random_uniform([len(encodeWords), unit], -0.1, 0.1, dtype=tf.float32))
 
 output_projection_layer = Dense(len(encodeWords), use_bias=False)
 
