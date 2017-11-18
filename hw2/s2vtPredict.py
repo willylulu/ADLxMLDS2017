@@ -32,12 +32,10 @@ testfiles = os.listdir(path+testdir)
 peerfiles = os.listdir(path+peerdir)
 
 testdata = {}
-videos = []
 for i in range(0,len(testfiles)):
     if not os.path.isdir(path+testdir+testfiles[i]):
         name = str.split(testfiles[i],".")[0]+'.'+str.split(testfiles[i],".")[1]
         testdata[name] = np.load(path+testdir+testfiles[i])
-        videos.append(name)
 print(len(testdata))
 
 peerdata = {}
@@ -47,12 +45,13 @@ for i in range(0,len(peerfiles)):
         peerdata[name] = np.load(path+peerdir+peerfiles[i])
 print(len(peerdata))
 
-testjsonfile = open(path+"testing_label.json","r")
-testjson = json.load(testjsonfile)
-
 peerVideos = []
 for x in open(path+"peer_review_id.txt").read().splitlines():
     peerVideos.append(x)
+    
+videos = []
+for x in open(path+"testing_id.txt").read().splitlines():
+    videos.append(x)
 
 # ddd = json.load(open("decoder.json"))
 # decodeWords = {}
@@ -85,9 +84,8 @@ def getTestDataSets():
     x_data = np.zeros((100,80,4096),dtype="float32")
 
     i = 0
-    for x in testjson:
-        name = x["id"]
-        temp = testdata[name]
+    for x in videos:
+        temp = testdata[x]
         x_data[i] = temp
         i=i+1
     return x_data
