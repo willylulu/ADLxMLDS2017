@@ -26,19 +26,33 @@ from tensorflow.contrib.seq2seq.python.ops import beam_search_decoder
 path = sys.argv[1]
 
 testdir = "testing_data/feat/"
+peerdir = "peer_review/feat/"
 
 testfiles = os.listdir(path+testdir)
+peerfiles = os.listdir(path+peerdir)
 
 testdata = {}
 videos = []
 for i in range(0,len(testfiles)):
-    name = str.split(testfiles[i],".")[0]+'.'+str.split(testfiles[i],".")[1]
-    testdata[name] = np.load(path+testdir+testfiles[i])
-    videos.append(name)
+    if not os.path.isdir(path+testdir+testfiles[i]):
+        name = str.split(testfiles[i],".")[0]+'.'+str.split(testfiles[i],".")[1]
+        testdata[name] = np.load(path+testdir+testfiles[i])
+        videos.append(name)
 print(len(testdata))
+
+peerdata = {}
+for i in range(0,len(peerfiles)):
+    if not os.path.isdir(path+peerdir+peerfiles[i]):
+        name = str.split(peerfiles[i],".")[0]+'.'+str.split(peerfiles[i],".")[1]
+        peerdata[name] = np.load(path+peerdir+peerfiles[i])
+print(len(peerdata))
 
 testjsonfile = open(path+"testing_label.json","r")
 testjson = json.load(testjsonfile)
+
+peerVideos = []
+for x in open(path+"peer_review_id.txt").read().splitlines():
+    peerVideos.append(x)
 
 # ddd = json.load(open("decoder.json"))
 # decodeWords = {}
@@ -74,6 +88,16 @@ def getTestDataSets():
     for x in testjson:
         name = x["id"]
         temp = testdata[name]
+        x_data[i] = temp
+        i=i+1
+    return x_data
+
+def getPeerDataSets():
+    x_data = np.zeros((len(peerdata),80,4096),dtype="float32")
+
+    i = 0
+    for x in peerVideos:
+        temp = peerdata[x]
         x_data[i] = temp
         i=i+1
     return x_data
@@ -192,4 +216,13 @@ print(sys.argv[2])
 f = open(sys.argv[2], "w")
 for i in range(0,len(ans)):
     f.write(videos[i]+","+ans[i]+"\n")
+f.close()
+
+x_data = getPeerDataSets()
+predict = sess.run([wordNums], feed_dict={inputs: x_data})
+ans = [getStr(x) for x in predict[0]]
+print(sys.argv[3])
+f = open(sys.argv[3], "w")
+for i in range(0,len(ans)):
+    f.write(peerVideos[i]+","+ans[i]+"\n")
 f.close()
