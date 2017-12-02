@@ -5,7 +5,7 @@ import tensorflow as tf
 from keras.models import Sequential
 from keras.layers import Dense, Reshape, Flatten, MaxPooling2D
 from keras.optimizers import Adam, RMSprop
-from keras.layers.convolutional import Conv2D
+from keras.layers import Conv2D
 from keras.backend.tensorflow_backend import set_session
 from keras.models import load_model
 
