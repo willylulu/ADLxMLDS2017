@@ -24,7 +24,7 @@ class Agent_PG(Agent):
         
         self.gamma = 0.99
         self.learning_rate = 0.001
-        self.batch_size = 2048
+        self.batch_size = 4096
         
         self.states = []
         self.gradients = []
@@ -91,8 +91,8 @@ class Agent_PG(Agent):
 #             loss = self.model.train_on_batch(X[i:(i+self.batch_size)], Y[i:(i+self.batch_size)])
 #             total_loss += loss
 #             i += self.batch_size
-        loss = self.model.train_on_batch(X, Y)
-        total_loss += loss
+#         loss = self.model.train_on_batch(X, Y)
+        self.model.fit(X, Y, batch_size=self.batch_size)
         return len(X), total_loss
             
     def init_game_setting(self):
@@ -149,7 +149,7 @@ class Agent_PG(Agent):
                 self.probs.append(prob)
             
             Xlen, loss = self.trainModel()
-            print('Episode: %d / Step size: %d / Score: %f / Loss: %f.' % (i, Xlen, score, loss))
+            print('Episode: %d / Step size: %d / Score: %f.' % (i, Xlen, score))
             if i>0 and i%10==0:
                 self.model.save("pong.h5")
             
