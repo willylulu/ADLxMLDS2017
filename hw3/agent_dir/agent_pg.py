@@ -17,14 +17,12 @@ class Agent_PG(Agent):
         """
 
         super(Agent_PG,self).__init__(env)
-        
-        config = tf.ConfigProto()
-        config.gpu_options.allow_growth = True
-        set_session(tf.Session(config=config))
+
         
         self.gamma = 0.99
         self.learning_rate = 0.001
-        self.batch_size = 4096
+        self.batch_size = 1024
+        self.action_size = 3
         
         self.states = []
         self.gradients = []
@@ -38,7 +36,7 @@ class Agent_PG(Agent):
             #you can load your model here
             print('loading trained model')
             print("got model!")
-            self.model = load_model("pong.h5")
+            self.model.load_weights("pong.h5")
 
         ##################
         # YOUR CODE HERE #
@@ -56,12 +54,12 @@ class Agent_PG(Agent):
     def getModel(self):
         
         model = Sequential()
-        model.add(Conv2D(32, 6, subsample=(3, 3), padding='same', 
-                         activation='relu', kernel_initializer='he_uniform', input_shape=(80, 80, 1)))
+        model.add(Conv2D(32, (5,5), strides=(3,3), padding="same"
+                         , activation='relu', kernel_initializer='he_uniform', input_shape=(80, 80, 1)))
+        model.add(Conv2D(64, (5,5), strides=(3,3), padding="same"
+                         , kernel_initializer='he_uniform', activation='relu'))
         model.add(Flatten())
-        model.add(Dense(64, activation='relu', kernel_initializer='he_uniform'))
-        model.add(Dense(32, activation='relu', kernel_initializer='he_uniform'))
-        model.add(Dense(self.env.action_space.n, activation='softmax'))
+        model.add(Dense(self.action_size, activation='softmax', kernel_initializer='he_uniform'))
 
         opt = Adam(lr=self.learning_rate)
         model.compile(loss='categorical_crossentropy', optimizer=opt)
@@ -92,7 +90,8 @@ class Agent_PG(Agent):
 #             total_loss += loss
 #             i += self.batch_size
 #         loss = self.model.train_on_batch(X, Y)
-        self.model.fit(X, Y, batch_size=self.batch_size)
+#        self.model.fit(X, Y, batch_size=self.batch_size, epochs=1)
+        total_loss = self.model.train_on_batch(X, Y)
         return len(X), total_loss
             
     def init_game_setting(self):
@@ -117,7 +116,7 @@ class Agent_PG(Agent):
         ##################
         if os.path.exists("pong.h5"):
             print("got model!")
-            self.model = load_model("pong.h5")
+            self.model.load_weights("pong.h5")
         for i in range(100000):
             
             state = self.env.reset()
@@ -141,26 +140,26 @@ class Agent_PG(Agent):
                 state, reward, done, info = self.env.step(action)
                 score += reward
                 
-                y = np.zeros([self.env.action_space.n])
-                y[action] = 1
+                y = np.zeros([self.action_size])
+                y[action-1] = 1
                 
                 self.gradients.append(np.array(y).astype('float32') - prob)
                 self.rewards.append(reward)
                 self.probs.append(prob)
             
             Xlen, loss = self.trainModel()
-            print('Episode: %d / Step size: %d / Score: %f.' % (i, Xlen, score))
+            print('Episode: %4d / Step size: %d / Score: %f / Loss: %f.' % (i, Xlen, score, loss))
             if i>0 and i%10==0:
-                self.model.save("pong.h5")
+                self.model.save_weights("pong.h5")
             
     def getAction(self, observation):
         x = np.expand_dims(observation, axis=0)
         prob = self.model.predict(x, batch_size=1)
         prob = prob[0]
         prob = prob / np.sum(prob)
-        action = np.random.choice(self.env.action_space.n, 1, p=prob)
+        action = np.random.choice(self.action_size, 1, p=prob)
         
-        return action[0], prob  
+        return action[0]+1, prob  
 
     def make_action(self, observation, test=True):
         """
