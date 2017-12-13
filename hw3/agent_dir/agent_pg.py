@@ -19,13 +19,8 @@ class Agent_PG(Agent):
 
         super(Agent_PG,self).__init__(env)
         
-        config = tf.ConfigProto()
-        config.gpu_options.allow_growth = True
-        session = tf.Session(config=config)
-        set_session(session)
-        
         self.gamma = 0.99
-        self.learning_rate = 0.001
+        self.learning_rate = 0.0001
         self.batch_size = 1024
         self.action_size = 3
         
@@ -121,6 +116,7 @@ class Agent_PG(Agent):
         ##################
         # YOUR CODE HERE #
         ##################
+        self.flag = len(os.listdir("./record"))
         if os.path.exists("pong.h5"):
             print("got model!")
             self.model.load_weights("pong.h5")
@@ -129,6 +125,8 @@ class Agent_PG(Agent):
         self.gradients = [None]*10000
         self.rewards = [None]*10000
         self.probs = [None]*10000
+        
+        self.record = []
         
         for i in range(100000):
             
@@ -160,7 +158,11 @@ class Agent_PG(Agent):
             
             Xlen, loss = self.trainModel(ite)
             print('Episode: %4d / Step size: %d / Score: %f / Loss: %f.' % (i, Xlen, score, loss))
+            self.record.append(score)
             if i>0 and i%10==0:
+                np.save("./record/"+str(self.flag)+".npy",np.array(self.record))
+                self.record = []
+                self.flag += 1
                 self.model.save_weights("pong.h5")
             
     def getAction(self, observation):
@@ -168,9 +170,9 @@ class Agent_PG(Agent):
         prob = self.model.predict(x, batch_size=1)
         prob = prob[0]
         prob = prob / np.sum(prob)
-        action = np.random.choice(self.action_size, 1, p=prob)
+        action = np.argmax(prob)
         
-        return action[0]+1, prob  
+        return action+1, prob  
 
     def make_action(self, observation, test=True):
         """
