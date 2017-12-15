@@ -190,7 +190,7 @@ class Agent_DQN(Agent):
             losst = 0
             score = 0
             maxqt = []
-            while done!=True:ㄐ
+            while done!=True:
                 action = self.act(state, False)
                 next_state, reward, done, _ = self.env.step(action)
                 score += reward
