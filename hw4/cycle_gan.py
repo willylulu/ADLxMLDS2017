@@ -113,7 +113,7 @@ class gan():
 #             16 16 128
         self.dc3 = Conv2D(self.d_dim*4, 4, strides=2, padding='same', kernel_initializer=self.truncate_normal)
 #             8 8 256
-        self.dc4 = Conv2D(self.d_dim*8, 4, strides=2, padding='same', kernel_initializer=self.truncate_normal)
+        self.dc4 = Conv2D(self.d_dim*8, 4, strides=1, padding='same', kernel_initializer=self.truncate_normal)
 #             4 4 512
         self.dc5 = Conv2D(1, 1, strides=1, padding='same', kernel_initializer=self.truncate_normal)
         self.dd1 = Dense(1, kernel_initializer=self.truncate_normal)
@@ -172,7 +172,6 @@ class CycleGAN():
         self.imageshape = (64, 64, 3)
         
         self.lr=2e-4
-        self.min_lr=2e-6
         
         self.x2y = gan()
         self.y2x = gan()
@@ -220,7 +219,7 @@ class CycleGAN():
     def train(self, datasetx, datasety):
         
         print("training...")
-        self.set_lr(5e-5)
+        self.set_lr(self.lr)
         for k in range(0, self.epochs):
             
             ite=0
