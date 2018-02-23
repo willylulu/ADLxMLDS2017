@@ -264,9 +264,10 @@ class CycleGAN():
                         self.lr -= self.min_lr
                         
 print("load anime...")
+# replace path to your numpy file, is a images pickle which shape is (img num, 64, 64, 3)
 anime = np.load('data2.npy')
 print(anime.shape)
-print("load celeb...")
+print("anime gray scale...")
 animegray = 0.299*anime[:,:,:,0] + 0.587*anime[:,:,:,1] + 0.114*anime[:,:,:,2]
 animegray = np.expand_dims(animegray, axis=-1)
 animegray = np.tile(animegray, [1, 1, 1, 3])
