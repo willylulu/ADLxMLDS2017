@@ -1,6 +1,6 @@
 # Comics Generation
 
-![test](https://github.com/willylulu/ADLxMLDS2017/blob/master/Comics_Generation/test.png?raw=true)
+![test](https://github.com/willylulu/ADLxMLDS2017/blob/master/Comics_Generation/fix_noise.png?raw=true)
 *	Given specific condition (hair and eyes color) to generate corresponding anime faces
 *	Using conditional GAN & DCGAN
 ##	Usage
