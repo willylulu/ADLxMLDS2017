@@ -30,3 +30,8 @@ testing DQN:
 * DQN model is writing in agent_dir/agent_dqn.py
 * Gradient Policy model is writing in agent_dir/agent_pg.py
 * A2C model is our bouns in this project, written in  agent_dir/agent_a2c.py
+
+##  Reference
+* [gameofdimension/policy-gradient-pong](https://github.com/gameofdimension/policy-gradient-pong)
+* [tokb23/dqn](https://github.com/tokb23/dqn)
+* [jcwleo/Reinforcement_Learning](https://github.com/jcwleo/Reinforcement_Learning)
