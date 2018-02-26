@@ -27,3 +27,8 @@ python3 comic_generator.py
 *	Training code is writing in cycle_gan.py
 *	Dataset using Comics Generation training data
 *	Change the data path in the code if you needed.
+
+##  Reference
+* [carpedm20/DCGAN-tensorflow](https://github.com/carpedm20/DCGAN-tensorflow)
+* [paarthneekhara/text-to-image](https://github.com/paarthneekhara/text-to-image)
+* [junyanz/CycleGAN](https://github.com/junyanz/CycleGAN)

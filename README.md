@@ -1,7 +1,7 @@
 # ADLxMLDS2017
 
 *	The projects we did in lecture: Application of deep learning in 2017 fall.
-*	I got A+ in this class
+*	I got **A+** in this class
 *	[Lecture link](https://www.csie.ntu.edu.tw/~yvchen/f106-adl/assignment.html)
 ##	Projects
 ###	Sequence_Labeling
