@@ -172,15 +172,11 @@ w2 = tf.Variable( tf.random_uniform([unit, len(encodeWords)], -0.1, 0.1), name='
 b2 = tf.Variable( tf.zeros([len(encodeWords)]), name='b2')
 
 l1 = tf.nn.rnn_cell.GRUCell(unit)
-#l1 = tf.nn.rnn_cell.DropoutWrapper(l1, output_keep_prob=0.9,variational_recurrent=True, dtype=tf.float32)
 l2 = tf.nn.rnn_cell.GRUCell(unit)
-#l2 = tf.nn.rnn_cell.DropoutWrapper(l2, output_keep_prob=0.9,variational_recurrent=True, dtype=tf.float32)
 
 att_w1 = tf.Variable( tf.random_uniform([l1.output_size, l1.output_size], -0.1, 0.1), name='aew1')
 att_w2 = tf.Variable( tf.random_uniform([l2.state_size, l1.output_size], -0.1, 0.1), name='adw1')
 att_v = tf.Variable(tf.random_uniform([l1.output_size, 1], -0.1, 0.1), name='attv')
-# w3 = tf.Variable( tf.random_uniform([l1.output_size, 1], -0.1, 0.1), name='w1')
-# b3 = tf.Variable( tf.zeros([1]), name='b1')
 
 state1 = l1.zero_state(batch_size=batch_size, dtype=tf.float32)
 state2 = l2.zero_state(batch_size=batch_size, dtype=tf.float32)
@@ -189,11 +185,6 @@ state2 = l2.zero_state(batch_size=batch_size, dtype=tf.float32)
 padding = tf.zeros([batch_size, unit],tf.float32)
 
 embedding = tf.Variable(tf.random_uniform([len(encodeWords), unit], -0.1, 0.1), tf.float32, name='emb')
-# w2v = np.load("w2v3.npy")
-# print(w2v.shape)
-# init = tf.constant_initializer(w2v)
-# embedding = tf.get_variable("embedding", shape=[len(encodeWords), unit], initializer=init, dtype=tf.float32, trainable=False)
-#embedding = tf.convert_to_tensor(w2v, np.float32)
 
 masks = tf.cast(tf.sequence_mask(length, maxlen=max_seq_length),tf.float32);
 
@@ -207,8 +198,6 @@ intput_temp2 = tf.nn.xw_plus_b( intput_temp1, w1, b1 )
 d_output = tf.reshape(intput_temp2, [ batch_size, 80, unit])
 
 for i in range(80):
-    
-    #d_output = tf.nn.xw_plus_b( inputs[:,i,:], w1, b1 )
     
     with tf.variable_scope("LSTM1") as scope:
         if i > 0 : scope.reuse_variables()
@@ -226,13 +215,6 @@ for i in range(80):
 for i in range(0, max_seq_length):   
     
     att_ws = None
-    
-#     for j in range(80):
-#         temp1 = tf.matmul(l2_outputs[:,j,:], att_w1) + tf.matmul(state2, att_w2)
-#         temp2 = att_v * tf.tanh(temp1)
-#         temp3 = tf.nn.softmax(temp2, dim=-1)
-#         att_w = tf.expand_dims(temp3, 1)
-#         att_ws = att_w if att_ws is None else tf.concat([att_ws, att_w], 1)
 
     att_temp1 = tf.reshape(l2_outputs, [-1, unit])
     att_temp2 = tf.matmul(att_temp1, att_w1)
@@ -257,17 +239,11 @@ for i in range(0, max_seq_length):
             lambda: labels_train[:, i])
         
     embedded_input = tf.nn.embedding_lookup(embedding, sample)
-    #embedded_input = tf.stop_gradient(embedding)
         
     with tf.variable_scope("LSTM2"):
         output2, state2 = l2(tf.concat([embedded_input, output1],1), state2)   
         
     output = tf.nn.xw_plus_b( output2, w2, b2 )
-    
-#     temp = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=output, labels=labels[:,i])
-#     temp *= masks[:,i]
-#     temp = tf.reduce_sum(temp) / tf.cast(batch_size, tf.float32)
-#     loss += temp
     
     wordNum = tf.argmax(output, -1)
     output = tf.expand_dims(output, 1)
