@@ -14,11 +14,12 @@
 ###	Game_Playing
 *	Using reinforcement learning play atari game
 *	Deep Q learning model for breakout-v1
-*	Gradient policy model for pong
+*	Gradient policy & A2C model for pong
 ###	Comics_Generation
 *	text to Comics face image
 *	Using DCGAN model and conditional GAN
 *	I got rank 5th/191
+*	Implementing cycle gan for style transfer is our bouns
 ##	Final Project
 ###	lf2gym
 *	We use our novel model (A3C+) training on 2.5D game (little fighter 2)
